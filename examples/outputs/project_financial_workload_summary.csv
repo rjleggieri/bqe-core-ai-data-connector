@@ -1,0 +1,4 @@
+project_id,project_code,project_name,client_name,manager_name,contract_type,contract_amount,hours,billable_hours,nonbillable_hours,estimated_billable_value,estimated_labor_cost,invoice_total,payment_total,outstanding_balance,unbilled_time_value,last_time_date
+p0000000-0000-0000-0000-000000000002,CH-220,Clinic Renovation,Contoso Health,Morgan Lee,0,80000.0,185.0,170.0,15.0,32300.0,14990.0,19000.0,10000.0,9000.0,13300.0,2026-07-11T00:00:00
+p0000000-0000-0000-0000-000000000003,NW-099,Feasibility Study,Northwind Civic,Morgan Lee,0,12000.0,6.0,0,6.0,0,660.0,0,0,0,0,2026-07-12T00:00:00
+p0000000-0000-0000-0000-000000000001,NW-100,Community Center,Northwind Civic,Morgan Lee,1,50000.0,148.0,148.0,0,22400.0,10600.0,15200.0,10000.0,5200.0,8400.0,2026-07-14T00:00:00

@@ -1,0 +1,32 @@
+# Credentials and OAuth material
+.env
+.env.*
+!.env.example
+secrets/
+tokens/
+*.token
+*.pem
+*.key
+
+# Company data, local cache, and generated artifacts
+data/
+cache/
+exports/
+logs/
+*.db
+*.sqlite
+*.sqlite3
+*.parquet
+*.log
+
+# Python/editor artifacts
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.idea/
+.vscode/

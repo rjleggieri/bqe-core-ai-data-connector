@@ -1,0 +1,4 @@
+employee_id,employee_name,department,title,manager_name,weekly_standard_hours,utilization_target,hours,billable_hours,nonbillable_hours,billable_ratio,active_project_count,allocated_units
+e0000000-0000-0000-0000-000000000002,Alex Rivera,Design,Project Architect,Morgan Lee,40.0,0.75,143.0,128.0,15.0,0.8951048951048951,2,60.0
+e0000000-0000-0000-0000-000000000001,Morgan Lee,Operations,Principal,,40.0,0.55,6.0,0,6.0,0.0,1,0
+e0000000-0000-0000-0000-000000000003,Sam Chen,Engineering,Engineer,Morgan Lee,40.0,0.8,190.0,190.0,0,1.0,2,72.0
