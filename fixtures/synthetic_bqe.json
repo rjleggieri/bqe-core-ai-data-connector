@@ -1,0 +1,42 @@
+{
+  "clients": [
+    {"id":"c0000000-0000-0000-0000-000000000001","name":"Northwind Civic","company":"Northwind Civic","lastUpdated":"2026-07-15T14:00:00Z"},
+    {"id":"c0000000-0000-0000-0000-000000000002","name":"Contoso Health","company":"Contoso Health","lastUpdated":"2026-07-15T14:00:00Z"}
+  ],
+  "employees": [
+    {"id":"e0000000-0000-0000-0000-000000000001","displayName":"Morgan Lee","managerId":null,"department":"Operations","title":"Principal","weeklyStandardHours":40,"utilizationTarget":0.55,"status":0,"lastUpdated":"2026-07-15T14:00:00Z"},
+    {"id":"e0000000-0000-0000-0000-000000000002","displayName":"Alex Rivera","managerId":"e0000000-0000-0000-0000-000000000001","department":"Design","title":"Project Architect","weeklyStandardHours":40,"utilizationTarget":0.75,"status":0,"lastUpdated":"2026-07-15T14:00:00Z"},
+    {"id":"e0000000-0000-0000-0000-000000000003","displayName":"Sam Chen","managerId":"e0000000-0000-0000-0000-000000000001","department":"Engineering","title":"Engineer","weeklyStandardHours":40,"utilizationTarget":0.8,"status":0,"lastUpdated":"2026-07-15T14:00:00Z"}
+  ],
+  "projects": [
+    {"id":"p0000000-0000-0000-0000-000000000001","clientId":"c0000000-0000-0000-0000-000000000001","managerId":"e0000000-0000-0000-0000-000000000001","code":"NW-100","name":"Community Center","displayName":"NW-100 Community Center","contractType":1,"contractAmount":50000,"status":0,"lastUpdated":"2026-07-16T12:00:00Z"},
+    {"id":"p0000000-0000-0000-0000-000000000002","clientId":"c0000000-0000-0000-0000-000000000002","managerId":"e0000000-0000-0000-0000-000000000001","code":"CH-220","name":"Clinic Renovation","displayName":"CH-220 Clinic Renovation","contractType":0,"contractAmount":80000,"status":0,"lastUpdated":"2026-07-16T12:00:00Z"},
+    {"id":"p0000000-0000-0000-0000-000000000003","clientId":"c0000000-0000-0000-0000-000000000001","managerId":"e0000000-0000-0000-0000-000000000001","code":"NW-099","name":"Feasibility Study","displayName":"NW-099 Feasibility Study","contractType":0,"contractAmount":12000,"status":1,"lastUpdated":"2026-07-16T12:00:00Z"}
+  ],
+  "time_entries": [
+    {"id":"t0000000-0000-0000-0000-000000000001","date":"2026-06-10T00:00:00","projectId":"p0000000-0000-0000-0000-000000000001","resourceId":"e0000000-0000-0000-0000-000000000002","activityId":"a0000000-0000-0000-0000-000000000001","actualHours":80,"clientHours":80,"billable":true,"billRate":175,"costRate":70,"billStatus":null,"invoiceId":"i0000000-0000-0000-0000-000000000001","isWrittenOff":false,"lastUpdated":"2026-06-12T13:00:00Z"},
+    {"id":"t0000000-0000-0000-0000-000000000002","date":"2026-06-18T00:00:00","projectId":"p0000000-0000-0000-0000-000000000002","resourceId":"e0000000-0000-0000-0000-000000000003","activityId":"a0000000-0000-0000-0000-000000000002","actualHours":100,"clientHours":100,"billable":true,"billRate":190,"costRate":82,"billStatus":null,"invoiceId":"i0000000-0000-0000-0000-000000000002","isWrittenOff":false,"lastUpdated":"2026-06-20T13:00:00Z"},
+    {"id":"t0000000-0000-0000-0000-000000000003","date":"2026-06-25T00:00:00","projectId":"p0000000-0000-0000-0000-000000000002","resourceId":"e0000000-0000-0000-0000-000000000002","activityId":"a0000000-0000-0000-0000-000000000003","actualHours":15,"clientHours":15,"billable":false,"billRate":0,"costRate":70,"billStatus":null,"invoiceId":null,"isWrittenOff":false,"lastUpdated":"2026-06-26T13:00:00Z"},
+    {"id":"t0000000-0000-0000-0000-000000000004","date":"2026-07-08T00:00:00","projectId":"p0000000-0000-0000-0000-000000000001","resourceId":"e0000000-0000-0000-0000-000000000002","activityId":"a0000000-0000-0000-0000-000000000001","actualHours":48,"clientHours":48,"billable":true,"billRate":175,"costRate":70,"billStatus":null,"invoiceId":null,"isWrittenOff":false,"lastUpdated":"2026-07-10T13:00:00Z"},
+    {"id":"t0000000-0000-0000-0000-000000000005","date":"2026-07-11T00:00:00","projectId":"p0000000-0000-0000-0000-000000000002","resourceId":"e0000000-0000-0000-0000-000000000003","activityId":"a0000000-0000-0000-0000-000000000002","actualHours":70,"clientHours":70,"billable":true,"billRate":190,"costRate":82,"billStatus":null,"invoiceId":null,"isWrittenOff":false,"lastUpdated":"2026-07-12T13:00:00Z"},
+    {"id":"t0000000-0000-0000-0000-000000000006","date":"2026-07-12T00:00:00","projectId":"p0000000-0000-0000-0000-000000000003","resourceId":"e0000000-0000-0000-0000-000000000001","activityId":"a0000000-0000-0000-0000-000000000003","actualHours":6,"clientHours":6,"billable":false,"billRate":225,"costRate":110,"billStatus":null,"invoiceId":null,"isWrittenOff":false,"lastUpdated":"2026-07-13T13:00:00Z"},
+    {"id":"t0000000-0000-0000-0000-000000000007","date":"2026-07-14T00:00:00","projectId":"p0000000-0000-0000-0000-000000000001","resourceId":"e0000000-0000-0000-0000-000000000003","activityId":"a0000000-0000-0000-0000-000000000002","actualHours":20,"clientHours":20,"billable":true,"billRate":190,"costRate":82,"billStatus":null,"invoiceId":null,"isWrittenOff":true,"lastUpdated":"2026-07-15T13:00:00Z"}
+  ],
+  "expense_entries": [
+    {"id":"x0000000-0000-0000-0000-000000000001","date":"2026-06-20T00:00:00","expenseId":"q0000000-0000-0000-0000-000000000001","projectId":"p0000000-0000-0000-0000-000000000001","resourceId":"e0000000-0000-0000-0000-000000000002","billable":true,"billStatus":null,"chargeAmount":1200,"costRate":900,"invoiceId":"i0000000-0000-0000-0000-000000000001","isWrittenOff":false,"lastUpdated":"2026-06-21T13:00:00Z"},
+    {"id":"x0000000-0000-0000-0000-000000000002","date":"2026-07-12T00:00:00","expenseId":"q0000000-0000-0000-0000-000000000002","projectId":"p0000000-0000-0000-0000-000000000002","resourceId":"e0000000-0000-0000-0000-000000000003","billable":true,"billStatus":null,"chargeAmount":750,"costRate":600,"invoiceId":null,"isWrittenOff":false,"lastUpdated":"2026-07-13T13:00:00Z"}
+  ],
+  "invoices": [
+    {"id":"i0000000-0000-0000-0000-000000000001","date":"2026-06-30T00:00:00","invoiceNumber":"SYN-1001","invoiceAmount":15200,"balance":5200,"serviceAmount":14000,"expenseAmount":1200,"isDraft":false,"isVoid":false,"lastUpdated":"2026-07-10T12:00:00Z","invoiceDetails":[{"clientId":"c0000000-0000-0000-0000-000000000001","invoiceId":"i0000000-0000-0000-0000-000000000001","projectId":"p0000000-0000-0000-0000-000000000001","amount":15200}]},
+    {"id":"i0000000-0000-0000-0000-000000000002","date":"2026-06-30T00:00:00","invoiceNumber":"SYN-1002","invoiceAmount":19000,"balance":9000,"serviceAmount":19000,"expenseAmount":0,"isDraft":false,"isVoid":false,"lastUpdated":"2026-07-10T12:00:00Z","invoiceDetails":[{"clientId":"c0000000-0000-0000-0000-000000000002","invoiceId":"i0000000-0000-0000-0000-000000000002","projectId":"p0000000-0000-0000-0000-000000000002","amount":19000}]},
+    {"id":"i0000000-0000-0000-0000-000000000003","date":"2026-07-15T00:00:00","invoiceNumber":"SYN-DRAFT","invoiceAmount":2000,"balance":2000,"serviceAmount":2000,"expenseAmount":0,"isDraft":true,"isVoid":false,"lastUpdated":"2026-07-15T12:00:00Z","invoiceDetails":[{"clientId":"c0000000-0000-0000-0000-000000000001","invoiceId":"i0000000-0000-0000-0000-000000000003","projectId":"p0000000-0000-0000-0000-000000000003","amount":2000}]}
+  ],
+  "payments": [
+    {"id":"y0000000-0000-0000-0000-000000000001","date":"2026-07-05T00:00:00","clientId":"c0000000-0000-0000-0000-000000000001","projectId":null,"amount":10000,"isRetainer":false,"lastUpdated":"2026-07-05T14:00:00Z","lineItems":[{"invoiceId":"i0000000-0000-0000-0000-000000000001","amount":10000}]},
+    {"id":"y0000000-0000-0000-0000-000000000002","date":"2026-07-06T00:00:00","clientId":"c0000000-0000-0000-0000-000000000002","projectId":null,"amount":10000,"isRetainer":false,"lastUpdated":"2026-07-06T14:00:00Z","lineItems":[{"invoiceId":"i0000000-0000-0000-0000-000000000002","amount":10000}]}
+  ],
+  "allocations": [
+    {"id":"l0000000-0000-0000-0000-000000000001","itemId":"a0000000-0000-0000-0000-000000000001","projectId":"p0000000-0000-0000-0000-000000000001","resourceId":"e0000000-0000-0000-0000-000000000002","startsOn":"2026-07-20T00:00:00","endsOn":"2026-07-31T00:00:00","units":60,"percentComplete":10,"lastUpdated":"2026-07-16T12:00:00Z"},
+    {"id":"l0000000-0000-0000-0000-000000000002","itemId":"a0000000-0000-0000-0000-000000000002","projectId":"p0000000-0000-0000-0000-000000000002","resourceId":"e0000000-0000-0000-0000-000000000003","startsOn":"2026-07-20T00:00:00","endsOn":"2026-07-31T00:00:00","units":72,"percentComplete":0,"lastUpdated":"2026-07-16T12:00:00Z"}
+  ]
+}
