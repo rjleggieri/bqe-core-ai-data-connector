@@ -66,7 +66,7 @@ def parser() -> argparse.ArgumentParser:
     )
 
     context = sub.add_parser(
-        "export-context", help="generate traceable JSON and Markdown for AI-assisted planning"
+        "export-context", help="generate traceable JSON and Markdown as AI-ready planning context"
     )
     context.add_argument("--output", type=Path, default=Path("exports/planning"))
 

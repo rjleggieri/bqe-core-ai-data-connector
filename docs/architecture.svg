@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 520" role="img" aria-labelledby="title desc">
   <title id="title">BQE CORE AI Data Connector architecture</title>
-  <desc id="desc">BQE CORE API flows through read-only ingestion and a validated warehouse to AI-assisted planning.</desc>
+  <desc id="desc">BQE CORE API flows through read-only ingestion and a validated warehouse to AI-ready planning context.</desc>
   <defs>
     <pattern id="grain" width="7" height="7" patternUnits="userSpaceOnUse">
       <circle cx="1" cy="1" r=".45" fill="#d8d0c0" opacity=".38"/>
@@ -48,7 +48,7 @@
   <g transform="translate(874 280)">
     <rect width="252" height="122" fill="#124d43"/>
     <text x="16" y="27" class="number">04</text>
-    <text x="16" y="78" class="stage">AI-assisted planning</text>
+    <text x="16" y="78" class="stage">AI-ready planning context</text>
   </g>
   <line x1="64" y1="438" x2="1126" y2="438" stroke="#c8c2b7"/>
   <line x1="418" y1="438" x2="418" y2="500" stroke="#c8c2b7"/>

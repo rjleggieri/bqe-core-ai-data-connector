@@ -2,7 +2,7 @@
 
 **Professional project · Gutschick, Little & Weber, P.A.**
 
-![BQE CORE API to read-only ingestion to validated warehouse to AI-assisted planning](docs/architecture.svg)
+![BQE CORE API to read-only ingestion to validated warehouse to AI-ready planning context](docs/architecture.svg)
 
 ## An AI-ready bridge from business data to decision support
 
@@ -21,10 +21,10 @@ BQE data.
    transient failures, honors rate limits, and advances per-resource checkpoints.
 3. **Validated warehouse** — retains deduplicated raw response batches and normalizes
    authorized data into SQLite with sync-run history and integrity checks.
-4. **AI-assisted planning** — exports traceable JSON, Markdown, and CSV summaries of
+4. **AI-ready planning context** — exports traceable JSON, Markdown, and CSV summaries of
    project history, employee workload, allocations, and trends.
 
-### Production capabilities
+### Implemented capabilities
 
 - GET-only API client; write methods are blocked before network I/O.
 - Native App PKCE authorization with state validation and a loopback callback.
