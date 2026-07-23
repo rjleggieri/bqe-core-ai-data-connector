@@ -18,7 +18,7 @@ import keyring
 from .config import Settings
 
 
-TOKEN_SERVICE = "bqe-reporting-poc"
+TOKEN_SERVICE = "bqe-core-ai-data-connector"
 TOKEN_CHUNK_SIZE = 800
 TOKEN_MAX_CHUNKS = 32
 

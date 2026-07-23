@@ -1,8 +1,11 @@
 # BQE CORE API Capability Assessment
 
-Status: documentation-based phase-one assessment, reviewed 2026-07-21 against BQE CORE API documentation version 2026.07.1.0. No authentication or company-data retrieval was performed.
+Status: documentation-based assessment, reviewed 2026-07-21 against BQE CORE API
+documentation version 2026.07.1.0 and followed by a limited read-only connection test.
 
-This is a read-only reporting proof of concept, not a production integration. BQE explicitly notes that not every CORE web-app module is available through the public API, and the authorizing user's subscription and security permissions further restrict results.
+This connector is a production-oriented read-only integration. BQE notes that not every
+CORE web-app module is available through the public API, and the authorizing user's
+subscription and security permissions further restrict results.
 
 ## Official sources inspected
 
@@ -120,7 +123,9 @@ Exact scope:
 
 - `read:core` — required read-only company-data scope.
 
-Do **not** request `offline_access` or `readwrite:core`. BQE's current application-type guidance says only Regular Web App and Web App (FAPI/PAR) support refresh tokens. `openid`, `profile`, `email`, and `address` are also unnecessary for phase-one reporting.
+Do **not** request `offline_access` or `readwrite:core`. BQE's current application-type
+guidance says only Regular Web App and Web App (FAPI/PAR) support refresh tokens.
+`openid`, `profile`, `email`, and `address` are also unnecessary for connector access.
 
 The token response supplies an `endpoint` value that is the company-specific API base URL. Validate it as HTTPS and against the expected BQE domain/data-center pattern before using it; do not construct or guess it.
 
@@ -139,6 +144,10 @@ The token response supplies an `endpoint` value that is the company-specific API
 | Prompt injection/data exfiltration | Treat BQE text/memos as untrusted data; do not give the reporting agent tools to send messages or mutate external systems; minimize fields supplied to an LLM |
 | Logs leaking data | Log counts, resource names, page numbers, and request IDs—not payloads, query values containing names, tokens, or financial records |
 
-## Phase-one implementation boundary
+## Implementation boundary
 
-The package implements mock synchronization, raw/normalized SQLite storage, analysis, CSV/Markdown outputs, reusable GET-only client methods, a loopback OAuth PKCE flow, Windows Credential Manager access-token storage, strict endpoint/scope validation, and one explicit five-row connection test. General live synchronization remains disabled.
+The package implements mock and permission-aware live synchronization, raw and
+normalized SQLite storage, sync auditing, incremental checkpoints, validation,
+CSV/JSON/Markdown outputs, reusable GET-only client methods, a loopback OAuth PKCE flow,
+Windows Credential Manager access-token storage, strict endpoint/scope validation, and
+field-minimized capability tests. It deliberately excludes all BQE write operations.

@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 import logging
+import random
 import time
 from typing import Any
 
@@ -16,7 +19,7 @@ class ReadOnlyViolation(RuntimeError):
 
 
 class BQEClient:
-    """Minimal reusable client for read-only BQE CORE business-data endpoints."""
+    """Resilient GET-only client for BQE CORE business-data endpoints."""
 
     def __init__(
         self,
@@ -35,7 +38,7 @@ class BQEClient:
                 "Authorization": f"Bearer {access_token}",
                 "Accept": "application/json",
                 "X-UTC-Offset": utc_offset,
-                "User-Agent": "bqe-reporting-poc/0.1 (read-only)",
+                "User-Agent": "bqe-core-ai-data-connector/1.0 (read-only)",
             },
             timeout=timeout,
             transport=transport,
@@ -81,18 +84,44 @@ class BQEClient:
             )
         url = f"{self.base_url}/{resource.lstrip('/')}"
         for attempt in range(self.max_retries + 1):
-            response = self._client.request("GET", url, **kwargs)
+            try:
+                response = self._client.request("GET", url, **kwargs)
+            except (httpx.TimeoutException, httpx.NetworkError):
+                if attempt >= self.max_retries:
+                    raise
+                self._sleep(attempt)
+                continue
             if response.status_code == 429 and attempt < self.max_retries:
-                delay = min(float(response.headers.get("Retry-After", "1")), 60.0)
+                delay = self._retry_after(response.headers.get("Retry-After"))
                 LOG.warning("BQE rate limit reached; retrying in %.1f seconds", delay)
                 time.sleep(delay)
                 continue
             if response.status_code >= 500 and attempt < self.max_retries:
-                time.sleep(min(2**attempt, 8))
+                self._sleep(attempt)
                 continue
             response.raise_for_status()
             return response
         raise AssertionError("unreachable")
+
+    @staticmethod
+    def _retry_after(value: str | None) -> float:
+        if not value:
+            return 1.0
+        try:
+            return min(max(float(value), 0.0), 60.0)
+        except ValueError:
+            try:
+                parsed = parsedate_to_datetime(value)
+                if parsed.tzinfo is None:
+                    parsed = parsed.replace(tzinfo=timezone.utc)
+                return min(max((parsed - datetime.now(timezone.utc)).total_seconds(), 0.0), 60.0)
+            except (TypeError, ValueError, OverflowError):
+                return 1.0
+
+    @staticmethod
+    def _sleep(attempt: int) -> None:
+        delay = min(2**attempt, 8) + random.uniform(0, 0.25)
+        time.sleep(delay)
 
     def get(self, resource: str, **query: Any) -> list[dict[str, Any]]:
         response = self.request("GET", resource, params=self.build_params(**query))

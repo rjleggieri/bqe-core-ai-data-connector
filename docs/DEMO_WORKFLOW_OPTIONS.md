@@ -1,48 +1,43 @@
-# Demo Workflow Options
+# Demonstration workflows
 
-Every demo should begin with a visible “read-only, reconciled as of…” banner and use synthetic or approved sanitized data until Finance signs off on definitions.
+Every demonstration should show the source, last checkpoint, validation status, and the
+fact that BQE CORE remains the system of record.
 
-## Immediately feasible with read-only API access
+## Available now
 
-- Ask “How did billable hours change by client, manager, project, or employee?” over a reconciled local snapshot.
-- Produce historical invoice, payment, and outstanding-balance summaries with drill-through to source IDs.
-- Show unbilled-time candidates by project, age, employee, and estimated value, labeled for review rather than as billing instructions.
-- Create a weekly management brief covering hours, billable mix, invoices, payments, balances, month-over-month movement, and data-quality warnings.
-- Flag projects with no recent time, unusually high hours, contract pressure, large unbilled time, or concentrated staffing.
-- Compare actual employee workload and billable ratio across recent periods.
+- Reconcile a bounded date range to BQE time and expense screens.
+- Compare historical billable and nonbillable hours by employee and project.
+- Review the projects that absorbed the most recent effort.
+- Show changes in project mix and employee workload by month.
+- Combine authorized allocation history with actual time history.
+- Generate a traceable management brief and machine-readable planning context.
+- Identify data gaps, stale history, concentrated staffing, and review candidates.
 
-## Feasible after additional development
+## Planning workflow
 
-- Forward-capacity dashboard from allocations, resource schedules, standard hours, and approved leave.
-- Project/phase hierarchy rollups with joint-invoice and multi-currency handling.
-- Scheduled incremental synchronization with deletion detection, overlap windows, encrypted token storage, monitoring, and reconciliation controls.
-- Natural-language Q&A with citations to local record IDs, saved query definitions, and row-level authorization.
-- Budget/estimate/fee-schedule variance analysis after relevant API schemas and tenant usage are validated.
-- Anomaly baselines that account for seasonality, project type, contract type, and employee role.
+1. Synchronize the latest authorized BQE history.
+2. Validate warehouse integrity and review unavailable resources.
+3. Export planning context.
+4. Add current commitments, deadlines, waiting periods, leave, and proposed work from the
+   maintained weekly planning input.
+5. Ask the AI assistant to summarize capacity, conflicts, and options.
+6. A manager reviews and decides; approved changes remain in the operational planning
+   process, not in an automatic BQE write path.
 
-## Not recommended or too risky
+## Dependent on tenant data or additional sources
 
-- Giving an LLM a broad access token, refresh token, browser session, or permission to call arbitrary BQE endpoints.
-- Requesting `readwrite:core` for a reporting demo.
-- Allowing an agent to create invoices, change time, write off entries, contact clients, approve work, or update project status.
-- Presenting estimated billable value, cost, profitability, “underbilling,” or anomaly flags as audited facts.
-- Uploading raw employee/client data, memos, attachments, credentials, or unrestricted exports to a general chat.
-- Browser-click automation when the official REST API supplies the data.
+- Reliable forward capacity requires current allocations or another maintained planning
+  input plus standard hours and approved leave.
+- Exact revenue, WIP, payroll burden, and accounting profitability may require data not
+  exposed by the public API.
+- Contract terms or constraints stored only in attachments, notes, or external systems
+  must be supplied separately.
+- The public API does not reproduce every standard or custom BQE report calculation.
 
-## Dependent on data that may not be available through the public API
+## Deliberately excluded
 
-- Exact recognized revenue/WIP and accounting-basis profitability.
-- Complete payroll burden, overhead, benefits, and vendor cost.
-- Reliable future capacity when allocations/resource schedules or leave data are incomplete.
-- Contract terms or billing judgment stored only in attachments, notes, or external systems.
-- Every standard/custom CORE report calculation; public APIs do not expose every web-app module.
-- Cross-company benchmarks or business-development context that exists outside CORE.
-
-## Suggested management demo sequence
-
-1. Show a read-only architecture and non-GET rejection test.
-2. Reconcile a small approved date range to CORE standard reports.
-3. Ask one historical billing question and drill from a summary to source IDs.
-4. Show workload change and one clearly explained heuristic flag.
-5. Generate the weekly brief, with uncertainties and reconciliation status visible.
-6. End with the boundary: suggestions for human review, never automatic changes to CORE.
+- `readwrite:core`
+- Automatic changes to time, invoices, projects, allocations, or status
+- Unrestricted raw data sent to a general chat
+- Financial estimates presented as audited facts
+- AI-generated schedules treated as approved commitments

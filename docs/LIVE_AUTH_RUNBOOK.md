@@ -1,88 +1,108 @@
-# Live Authorization and First Read-Only Test
+# Live authorization and synchronization runbook
 
-This runbook contains two distinct actions. Authorization obtains a short-lived token but retrieves no company business data. The connection test makes one limited GET request. Stop between them unless both have been approved.
+Authorization retrieves a short-lived token but no BQE business records. Capability
+probes retrieve at most five minimal rows and do not store or display them. Synchronization
+stores authorized records in the local Git-ignored warehouse.
 
-## Already completed
+## Application configuration
 
-- BQE Developer Portal application type: Native App
-- Client ID stored locally in Git-ignored `.env`
+- Application type: Native App
 - Redirect URI: `http://127.0.0.1:8765/callback`
 - Requested scope: exactly `read:core`
 - Webhooks: disabled
-- Windows credential backend: available
-- Non-GET business requests: blocked in code
+- Client secret: none
+- Access token: Windows Credential Manager
+- Business-data client: GET-only
 
-## Before authorization
-
-Confirm:
-
-1. The portal's edit view still shows the exact redirect URI above.
-2. You will sign in with the intended CORE company/user.
-3. That user's permissions are limited to the reporting modules needed for the proof of concept.
-4. You approve opening the BQE login page and obtaining a short-lived read-only access token.
-
-Then change these two local `.env` values:
+Copy `.env.example` to `.env`, enter the client ID, and confirm that `.env` is ignored.
+Set:
 
 ```dotenv
 BQE_MODE=LIVE
 BQE_ENABLE_LIVE=YES
 ```
 
-Run:
+## Authorize
 
 ```powershell
 .venv\Scripts\bqe.exe auth --login
 ```
 
-The CLI binds only to `127.0.0.1:8765`, generates PKCE and `state`, opens the BQE login page, and waits up to three minutes. On the consent page, verify that the requested permission is **read:core only**. If any write, profile, email, address, or offline permission appears, decline and stop.
+The command binds to `127.0.0.1:8765`, generates PKCE and state values, opens BQE
+Identity, and waits up to three minutes. Confirm that consent requests `read:core` only.
+Decline if a write, profile, email, address, or offline permission appears.
 
-After consent, the authorization code is exchanged once. The code and PKCE verifier are discarded. The returned API endpoint must be HTTPS under `*.bqecore.com`; a token with `readwrite:core`, a refresh token, or an unexpected endpoint is rejected. The short-lived access token is stored in Windows Credential Manager. No BQE business-data endpoint is called.
+The returned API endpoint must use HTTPS under `*.bqecore.com`. The connector rejects a
+refresh token or `readwrite:core`. It stores the short-lived token in Windows Credential
+Manager and makes no company-data request during authorization.
 
-Check status without a network request:
+## Test capabilities
 
-```powershell
-.venv\Scripts\bqe.exe auth
-```
-
-## First business-data test
-
-Only after separately approving the first data request, run:
+Project capability:
 
 ```powershell
 .venv\Scripts\bqe.exe test-connection --live
 ```
 
-This makes exactly one business-data request equivalent to:
+Approved resource capabilities:
 
-```http
-GET {validated-endpoint}/project?fields=id,lastUpdated&orderBy=lastUpdated%20desc&page=1,5
+```powershell
+.venv\Scripts\bqe.exe test-access --live timeentry expenseentry allocation
 ```
 
-It prints only HTTP status, row count, and the remaining rate-limit value. It does not print identifiers or field values, cache the response, or synchronize other resources.
+Each probe requests only `id,lastUpdated`, limits the response to five rows, and prints
+only HTTP status, row count, and rate-limit information.
 
-## After the test
+## First synchronization
 
-Remove the local access token when desired:
+Use a bounded date range when only time, expense, and allocation history is approved:
+
+```powershell
+.venv\Scripts\bqe.exe sync --live `
+  --resources time_entries expense_entries allocations `
+  --from YYYY-MM-DD --to YYYY-MM-DD
+```
+
+Use `--full` only when a complete first load has been approved:
+
+```powershell
+.venv\Scripts\bqe.exe sync --live --full
+```
+
+The default run is permission-aware: an HTTP 403 or 404 is recorded as unavailable and
+other resources continue. Add `--strict` when missing access must fail the run.
+
+## Validate and export
+
+```powershell
+.venv\Scripts\bqe.exe status
+.venv\Scripts\bqe.exe validate
+.venv\Scripts\bqe.exe analyze
+.venv\Scripts\bqe.exe brief
+.venv\Scripts\bqe.exe export-context
+```
+
+Reconcile time-entry count, actual hours, billable hours, expense-entry count, and charge
+amount to the same inclusive date range in BQE CORE. Financial measures must be
+reconciled to BQE reports before presentation.
+
+## Routine synchronization
+
+After a resource has a checkpoint, the same command incrementally requests records whose
+`lastUpdated` value is at or after that checkpoint. Equal timestamps are intentionally
+overlapped; upserts and raw-response hashes make the operation repeatable.
+
+```powershell
+.venv\Scripts\bqe.exe sync --live
+```
+
+## Close out
+
+Delete the locally stored access token when it is no longer needed:
 
 ```powershell
 .venv\Scripts\bqe.exe auth --clear
 ```
 
-Return `.env` to:
-
-```dotenv
-BQE_MODE=MOCK
-BQE_ENABLE_LIVE=NO
-```
-
-Before broader retrieval, agree on the company timezone, reporting currency, approved test date range, local retention, and the BQE report/screen used for reconciliation.
-
-## Limited time/expense pilot
-
-For an explicitly approved date range, the constrained pilot command writes to a separate Git-ignored database and requests no names, memos, descriptions, custom fields, or attachments:
-
-```powershell
-.venv\Scripts\bqe.exe pilot-sync --live --from YYYY-MM-DD --to YYYY-MM-DD --output-db data\live_pilot.sqlite3
-```
-
-Verify against **Time & Expenses > Time Entries** and **Time & Expenses > Expense Entries**. On each screen select a Custom Period matching the inclusive dates, clear status restrictions, and select all accessible employees/resources. Compare entry count and actual hours for time; compare entry count and charge amount for expenses. The API extract may contain only the records allowed by the consenting user's Security Profile.
+Disable the two live gates in `.env`. Apply the organization's approved retention period
+to the local database and exports.

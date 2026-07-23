@@ -1,147 +1,167 @@
-# BQE CORE Read-Only Reporting Proof of Concept
+# BQE CORE AI Data Connector
 
-This project explores management reporting, historical billing analysis, and workload analysis from BQE CORE without changing BQE data. Phase one is **mock-first and synthetic-only**. It is a reporting proof of concept, not a production integration.
+**Professional project · Gutschick, Little & Weber, P.A.**
 
-No BQE authentication or company-data request has been attempted.
+![BQE CORE API to read-only ingestion to validated warehouse to AI-assisted planning](docs/architecture.svg)
 
-## Safety boundary
+## An AI-ready bridge from business data to decision support
 
-- The business-data client implements GET only and rejects POST, PUT, PATCH, and DELETE before network I/O.
-- Configuration rejects `readwrite:core`.
-- Live mode requires two local gates (`BQE_MODE=LIVE` and `BQE_ENABLE_LIVE=YES`), and phase-one `bqe sync --live` still stops before making a request.
-- Credentials/tokens, caches, databases, exports, logs, and live data are excluded by `.gitignore`.
-- Mock commands print an unmistakable synthetic-data banner.
+This connector turns authorized historical BQE CORE operational and financial data
+into a normalized, auditable local warehouse. It gives downstream AI tools traceable
+project and resource history for human-reviewed workload planning as schedules change.
 
-## What is implemented
+BQE CORE remains the system of record. The connector cannot create, update, or delete
+BQE data.
 
-- Reusable `httpx` API client with `fields`, `where`, `orderBy`, `page`, and `expand`; documented pagination limits; retry handling for `429`/5xx; and methods for projects, clients, employees, time/expense entries, invoices, payments, activities, allocations, and custom fields.
-- Native App OAuth Authorization Code + PKCE with random state, S256 challenge, a `127.0.0.1` loopback callback, strict endpoint validation, and Windows Credential Manager access-token storage.
-- SQLite warehouse with raw-response audit storage, normalized tables, foreign keys, hash deduplication, upserts, and per-resource high-water marks.
-- Synthetic transformations for project hours, billable/nonbillable hours, estimated billable value, estimated labor cost, invoices, payments, outstanding balance, unbilled time, workload, and monthly trends.
-- CSV and Markdown prototype outputs.
-- Automated tests for pagination, query construction, write prevention, normalization, duplicates, incremental sync state, nulls, and financial consistency.
+## What it does
 
-## What is not implemented
+1. **BQE CORE API** — authorizes a Native App through OAuth Authorization Code with
+   PKCE and requests exactly `read:core`.
+2. **Read-only ingestion** — performs GET requests only, follows pagination, retries
+   transient failures, honors rate limits, and advances per-resource checkpoints.
+3. **Validated warehouse** — retains deduplicated raw response batches and normalizes
+   authorized data into SQLite with sync-run history and integrity checks.
+4. **AI-assisted planning** — exports traceable JSON, Markdown, and CSV summaries of
+   project history, employee workload, allocations, and trends.
 
-- General live synchronization. The only enabled live business-data operation is an explicit, five-row, field-minimized connection test.
-- Production scheduling, webhook handling, deleted-record sync, encrypted database, multi-company isolation, or monitoring.
-- Validated treatment of BQE enums, project phases, joint/manual invoices, retainers, credits, multi-currency, write-ups/write-downs, or accounting revenue.
-- Vendor resources and production-grade decimal currency accounting.
-- Automatic decisions or any BQE write operation.
+### Production capabilities
 
-See [API capability assessment](docs/BQE_API_CAPABILITY_ASSESSMENT.md), [local model](docs/LOCAL_ANALYTICAL_MODEL.md), and [demo workflows](docs/DEMO_WORKFLOW_OPTIONS.md).
+- GET-only API client; write methods are blocked before network I/O.
+- Native App PKCE authorization with state validation and a loopback callback.
+- Short-lived access-token storage in Windows Credential Manager.
+- Double opt-in for live access through `BQE_MODE=LIVE` and `BQE_ENABLE_LIVE=YES`.
+- Permission-aware sync: unavailable resources are recorded and skipped by default.
+- Full first load or bounded date-window load, followed by incremental synchronization.
+- Page-level raw audit evidence, SHA-256 deduplication, normalized upserts, and
+  per-resource high-water marks.
+- Retry handling for rate limits, server errors, timeouts, and temporary network errors.
+- SQLite integrity, foreign-key, audit-coverage, and negative-time checks.
+- Planning context that carries source metadata, coverage, checkpoints, validation
+  results, safety limits, employee history, project history, and monthly trends.
+- Mock data and automated tests for a safe, repeatable demonstration.
 
-## Install on Windows
+## Supported resources
 
-In PowerShell from this folder:
+The sync engine supports clients, employees, projects, time entries, expense entries,
+invoices, payments, and allocations. Actual availability depends on the BQE subscription
+and security permissions of the person who authorizes the app. If project or employee
+master endpoints are unavailable, names returned with authorized time and expense facts
+still support historical summaries.
+
+## Quick start
+
+Python 3.11 or later is required.
 
 ```powershell
 py -3.11 -m venv .venv
-.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-python -m pip install -e ".[dev]"
+.venv\Scripts\python.exe -m pip install --upgrade pip
+.venv\Scripts\python.exe -m pip install -e ".[dev]"
 ```
 
-If PowerShell blocks activation, use `.venv\Scripts\python.exe` in place of `python`; changing machine-wide execution policy is not required.
-
-## Run in mock mode
-
-Do not create `.env` for the synthetic workflow. Defaults are safe.
+Run the synthetic end-to-end workflow without a BQE connection:
 
 ```powershell
-bqe sync --from 2026-06-01 --to 2026-07-31
-bqe analyze
-bqe brief
-bqe inspect-schema
-pytest
+$env:BQE_MODE="MOCK"
+$env:BQE_ENABLE_LIVE="NO"
+.venv\Scripts\bqe.exe sync
+.venv\Scripts\bqe.exe validate
+.venv\Scripts\bqe.exe analyze
+.venv\Scripts\bqe.exe brief
+.venv\Scripts\bqe.exe export-context
+.venv\Scripts\python.exe -m pytest
 ```
 
-Generated local data goes under `data/`; outputs go under `exports/mock/`. Both are Git-ignored. The included prototype copies under `examples/outputs/` are synthetic and safe to review.
+Local databases and generated exports are Git-ignored. Safe synthetic examples are
+checked in under `examples/outputs/`.
 
-The date arguments are accepted for the future live workflow; the fixed synthetic fixture currently includes June and July 2026 and is loaded in full.
+## Configure authorized read-only access
 
-## OAuth design to configure later
+Create a **Native App** in the BQE Developer Portal:
 
-Proposed application type: **Native App**
+- Redirect URI: `http://127.0.0.1:8765/callback`
+- Scope: `read:core` only
+- No client secret
+- No webhook
+- No `offline_access` or `readwrite:core`
 
-Redirect URI: **`http://127.0.0.1:8765/callback`**
+Copy `.env.example` to `.env`, enter the displayed client ID, and keep the two live
+gates disabled while reviewing the configuration.
 
-Scope: **`read:core`**
+```powershell
+Copy-Item .env.example .env
+notepad .env
+.venv\Scripts\bqe.exe auth --login
+.venv\Scripts\bqe.exe test-access --live timeentry expenseentry allocation
+```
 
-BQE's current application-type documentation says Native Apps do not support refresh tokens. Request exactly `read:core`; do not add `offline_access`, `readwrite:core`, `openid`, `profile`, `email`, or `address`. Interactive sign-in is required again after the short-lived access token expires.
+After explicit approval, set `BQE_MODE=LIVE` and `BQE_ENABLE_LIVE=YES`.
 
-The design follows BQE's [Native App PKCE guidance](https://api-explorer.bqecore.com/docs/authentication-authorization) and [Getting Started flow](https://api-explorer.bqecore.com/docs/getting-started). BQE's token response includes the company-specific API `endpoint`; the implementation must validate and use that returned HTTPS URL rather than guessing it.
+For a bounded first load:
 
-## Developer Portal steps (do not authenticate yet)
+```powershell
+.venv\Scripts\bqe.exe sync --live `
+  --resources time_entries expense_entries allocations `
+  --from 2026-01-01 --to 2026-07-31
+```
 
-1. Sign in to the BQE CORE Developer Portal with the separate developer account.
-2. Add a new application with a clearly limited name such as `Management Reporting POC - Read Only`.
-3. Select application type **Native App**.
-4. Register exactly `http://127.0.0.1:8765/callback` as a redirect URI, including scheme, host, port, path, case, and lack of trailing slash.
-5. The portal lists supported scopes, but this app requests exactly `read:core`. Never request `offline_access` or `readwrite:core` for this Native App.
-6. Do not create webhooks for phase one.
-7. Copy only the Client ID into a local `.env` created from `.env.example`; a Native App should not use a client secret.
-8. Choose a dedicated CORE user with the minimum read subscriptions/security permissions required for the small test. Exclude HR/payroll/banking/private employee fields.
-9. Review the portal entry, selected CORE user, redirect URI, and scopes with the project owner before any consent.
-10. Stop and provide the non-secret configuration items listed below. Do not paste tokens, passwords, client secrets, or company records into chat.
+For an intentionally complete first load:
 
-## Information needed before the first authenticated call
+```powershell
+.venv\Scripts\bqe.exe sync --live --full
+```
 
-Provide or confirm only:
+Later runs use stored checkpoints:
 
-- The non-secret Native App Client ID (preferably enter it locally rather than in chat).
-- Confirmation that the registered application type is Native App.
-- Confirmation that the exact redirect URI is registered.
-- Confirmation that the consent screen requests only `read:core`.
-- The intended dedicated CORE user's role/subscription categories—describe permissions, not credentials.
-- The company timezone and reporting currency.
-- An approved minimal test date range and whether project/client names may be cached locally.
-- The expected BQE report/screen and totals that Finance will use for reconciliation.
-- Approval of the local retention location and period for the first extract.
+```powershell
+.venv\Scripts\bqe.exe sync --live
+.venv\Scripts\bqe.exe status
+.venv\Scripts\bqe.exe validate
+.venv\Scripts\bqe.exe export-context
+```
 
-Never provide a password, authorization code, access token, refresh token, client secret, or live data in chat.
+`--strict` makes inaccessible resources fail the run. Without it, they are recorded as
+unavailable and the remaining authorized resources continue.
 
-## Recommended first limited read-only test
+## Command reference
 
-After explicit approval:
+| Command | Purpose |
+|---|---|
+| `bqe auth --login` | Interactive PKCE authorization |
+| `bqe auth --clear` | Delete the locally stored access token |
+| `bqe test-access --live …` | Five-row, field-minimized capability probes |
+| `bqe sync` | Load synthetic fixtures |
+| `bqe sync --live` | Incrementally ingest authorized BQE resources |
+| `bqe status` | Show local row counts, checkpoints, and recent sync runs |
+| `bqe validate` | Check warehouse integrity and audit coverage |
+| `bqe analyze` | Export project, employee, and monthly CSV summaries |
+| `bqe brief` | Export a human-readable management brief |
+| `bqe export-context` | Export traceable JSON and Markdown for AI planning |
+| `bqe inspect-schema` | Print the local SQLite schema |
 
-1. Complete one interactive Native App PKCE consent locally with `bqe auth --login`.
-2. Validate the returned API endpoint as an approved HTTPS BQE host.
-3. Call only:
+## Security and governance
 
-   `GET {endpoint}/project?fields=id,lastUpdated&page=1,5&orderBy=lastUpdated%20desc`
+- No credentials, tokens, company databases, caches, logs, or generated live exports
+  belong in Git.
+- The public repository contains synthetic examples only.
+- Access is bounded by the authorizing user's BQE subscription and permissions.
+- Authorization is interactive because Native Apps do not use a refresh token here.
+- Live synchronization is disabled by default and requires two local settings.
+- Financial summaries must be reconciled to BQE reports before presentation.
+- AI output is decision support for people; it is not an autonomous schedule or a write
+  path back to BQE.
 
-4. Log only status, response headers, elapsed time, and row count—not IDs or payload values.
-5. Confirm no more than five rows, inspect field shape locally, then revoke/delete local tokens if the test ends.
+See [SECURITY.md](SECURITY.md), the
+[live authorization runbook](docs/LIVE_AUTH_RUNBOOK.md), the
+[analytical model](docs/LOCAL_ANALYTICAL_MODEL.md), and the
+[API capability assessment](docs/BQE_API_CAPABILITY_ASSESSMENT.md).
 
-This verifies authorization, endpoint selection, field projection, sorting, pagination, rate-limit headers, and project permission while minimizing exposed content. The next test should use a tiny approved time-entry window and reconcile counts/hours to CORE.
+## Known boundaries
 
-## Verification before presenting results
+BQE does not expose every CORE web module through the public API. This connector can
+only retrieve data available to the authorizing user. Future availability, approved
+leave, and proposed work still require a maintained planning input if those records are
+not available through an authorized endpoint. Historical patterns help people review
+capacity and conflicts; they do not replace current commitments or management judgment.
 
-For every reporting period and currency:
-
-1. Record the extraction timestamp, user/permission profile, filters, timezone, and API field list.
-2. Reconcile counts and sums for invoices, voids/drafts, payments, balances, time hours, billable hours, and unbilled entries to named BQE screens/reports.
-3. Investigate differences at source-ID level; do not “plug” unexplained variances.
-4. Confirm project phases, joint invoices, retainers/credits, write-offs, rate overrides, taxes, and multi-currency treatment.
-5. Have Finance approve billing/payment definitions and a project leader approve workload definitions.
-6. Label calculated bill value, labor cost, outstanding allocations, and anomaly flags as estimates where applicable.
-7. Preserve raw API evidence and transformation version for audit, subject to approved retention.
-
-## Key risks before real data
-
-- Read access may expose sensitive financial, client, employee, cost-rate, or memo data beyond the demo's needs.
-- The consenting user's subscription/permissions can silently make extracts incomplete.
-- BQE public API fields and CORE standard reports may implement different business logic.
-- Fixed-fee, joint/manual invoices, retainers, credits, multi-currency, project hierarchy, and write-up/down rules can distort naive joins.
-- Allocation data may not reflect actual capacity if teams do not maintain it.
-- Local SQLite/CSV exports are unencrypted by default; keep them on an approved restricted drive and delete them on schedule.
-- LLM-generated narratives can overstate heuristics. Every brief must show reconciliation and data-quality caveats.
-
-## Secure token handling recommendation
-
-The CLI stores only the short-lived access token and validated company endpoint in Windows Credential Manager, keyed by the Native App Client ID. It rejects refresh tokens, write-scoped tokens, and non-BQE endpoints. Tokens are never printed or logged and can be removed with `bqe auth --clear`. Plaintext token files are not used.
-
-## Live authorization runbook
-
-See [docs/LIVE_AUTH_RUNBOOK.md](docs/LIVE_AUTH_RUNBOOK.md) for the exact interactive steps and stop points.
+This is an independent integration and is not affiliated with or endorsed by BQE
+Software.

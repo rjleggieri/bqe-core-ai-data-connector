@@ -8,8 +8,13 @@ from typing import Any
 
 
 PROJECT_SQL = """
-WITH time_rollup AS (
-  SELECT project_id,
+WITH project_keys AS (
+  SELECT id project_id FROM projects
+  UNION SELECT project_id FROM time_entries WHERE project_id IS NOT NULL
+  UNION SELECT project_id FROM expense_entries WHERE project_id IS NOT NULL
+  UNION SELECT project_id FROM allocations WHERE project_id IS NOT NULL
+), time_rollup AS (
+  SELECT project_id, MAX(project_display) fact_project_name,
     SUM(COALESCE(actual_hours,0)) hours,
     SUM(CASE WHEN billable=1 THEN COALESCE(actual_hours,0) ELSE 0 END) billable_hours,
     SUM(CASE WHEN billable=0 THEN COALESCE(actual_hours,0) ELSE 0 END) nonbillable_hours,
@@ -28,7 +33,8 @@ WITH time_rollup AS (
   FROM payment_details pd JOIN invoices i ON i.id=pd.invoice_id
   JOIN invoice_details d ON d.invoice_id=i.id GROUP BY d.project_id
 )
-SELECT p.id project_id, p.code project_code, p.name project_name, c.name client_name,
+SELECT k.project_id, p.code project_code,
+  COALESCE(p.name,t.fact_project_name,k.project_id) project_name, c.name client_name,
   m.display_name manager_name, p.contract_type, COALESCE(p.contract_amount,0) contract_amount,
   COALESCE(t.hours,0) hours, COALESCE(t.billable_hours,0) billable_hours,
   COALESCE(t.nonbillable_hours,0) nonbillable_hours,
@@ -37,23 +43,42 @@ SELECT p.id project_id, p.code project_code, p.name project_name, c.name client_
   COALESCE(i.invoice_total,0) invoice_total, COALESCE(pay.payment_total,0) payment_total,
   COALESCE(i.outstanding_balance,0) outstanding_balance,
   COALESCE(t.unbilled_time_value,0) unbilled_time_value, t.last_time_date
-FROM projects p LEFT JOIN clients c ON c.id=p.client_id
-LEFT JOIN employees m ON m.id=p.manager_id LEFT JOIN time_rollup t ON t.project_id=p.id
-LEFT JOIN invoice_rollup i ON i.project_id=p.id LEFT JOIN payment_rollup pay ON pay.project_id=p.id
-ORDER BY p.code
+FROM project_keys k LEFT JOIN projects p ON p.id=k.project_id
+LEFT JOIN clients c ON c.id=p.client_id
+LEFT JOIN employees m ON m.id=p.manager_id
+LEFT JOIN time_rollup t ON t.project_id=k.project_id
+LEFT JOIN invoice_rollup i ON i.project_id=k.project_id
+LEFT JOIN payment_rollup pay ON pay.project_id=k.project_id
+ORDER BY COALESCE(p.code,p.name,t.fact_project_name,k.project_id)
 """
+
 EMPLOYEE_SQL = """
-SELECT e.id employee_id, e.display_name employee_name, e.department, e.title,
+WITH employee_keys AS (
+  SELECT id employee_id FROM employees
+  UNION SELECT resource_id FROM time_entries WHERE resource_id IS NOT NULL
+  UNION SELECT resource_id FROM expense_entries WHERE resource_id IS NOT NULL
+  UNION SELECT resource_id FROM allocations WHERE resource_id IS NOT NULL
+), time_rollup AS (
+  SELECT resource_id, MAX(resource_name) fact_resource_name,
+    SUM(COALESCE(actual_hours,0)) hours,
+    SUM(CASE WHEN billable=1 THEN COALESCE(actual_hours,0) ELSE 0 END) billable_hours,
+    SUM(CASE WHEN billable=0 THEN COALESCE(actual_hours,0) ELSE 0 END) nonbillable_hours,
+    COUNT(DISTINCT project_id) active_project_count
+  FROM time_entries GROUP BY resource_id
+)
+SELECT k.employee_id,
+  COALESCE(e.display_name,t.fact_resource_name,k.employee_id) employee_name,
+  e.department, e.title,
   m.display_name manager_name, e.weekly_standard_hours, e.utilization_target,
-  COALESCE(SUM(t.actual_hours),0) hours,
-  COALESCE(SUM(CASE WHEN t.billable=1 THEN t.actual_hours ELSE 0 END),0) billable_hours,
-  COALESCE(SUM(CASE WHEN t.billable=0 THEN t.actual_hours ELSE 0 END),0) nonbillable_hours,
-  CASE WHEN SUM(t.actual_hours)>0 THEN SUM(CASE WHEN t.billable=1 THEN t.actual_hours ELSE 0 END)/SUM(t.actual_hours) ELSE 0 END billable_ratio,
-  COUNT(DISTINCT t.project_id) active_project_count,
-  COALESCE((SELECT SUM(a.units) FROM allocations a WHERE a.resource_id=e.id),0) allocated_units
-FROM employees e LEFT JOIN employees m ON m.id=e.manager_id
-LEFT JOIN time_entries t ON t.resource_id=e.id
-GROUP BY e.id ORDER BY e.display_name
+  COALESCE(t.hours,0) hours, COALESCE(t.billable_hours,0) billable_hours,
+  COALESCE(t.nonbillable_hours,0) nonbillable_hours,
+  CASE WHEN COALESCE(t.hours,0)>0 THEN t.billable_hours/t.hours ELSE 0 END billable_ratio,
+  COALESCE(t.active_project_count,0) active_project_count,
+  COALESCE((SELECT SUM(a.units) FROM allocations a WHERE a.resource_id=k.employee_id),0) allocated_units
+FROM employee_keys k LEFT JOIN employees e ON e.id=k.employee_id
+LEFT JOIN employees m ON m.id=e.manager_id
+LEFT JOIN time_rollup t ON t.resource_id=k.employee_id
+ORDER BY COALESCE(e.display_name,t.fact_resource_name,k.employee_id)
 """
 
 TREND_SQL = """
@@ -94,21 +119,21 @@ def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
 
 
 def analyze(connection: sqlite3.Connection, output_dir: Path) -> dict[str, Path]:
-    projects = project_summary(connection)
-    employees = employee_summary(connection)
-    trends = monthly_trends(connection)
     paths = {
         "projects": output_dir / "project_financial_workload_summary.csv",
         "employees": output_dir / "employee_workload_summary.csv",
         "trends": output_dir / "monthly_trends.csv",
     }
-    write_csv(paths["projects"], projects)
-    write_csv(paths["employees"], employees)
-    write_csv(paths["trends"], trends)
+    write_csv(paths["projects"], project_summary(connection))
+    write_csv(paths["employees"], employee_summary(connection))
+    write_csv(paths["trends"], monthly_trends(connection))
     return paths
 
 
-def management_brief(connection: sqlite3.Connection) -> str:
+def management_brief(
+    connection: sqlite3.Connection,
+    data_mode: str = "local read-only warehouse",
+) -> str:
     projects = project_summary(connection)
     employees = employee_summary(connection)
     trends = monthly_trends(connection)
@@ -120,22 +145,37 @@ def management_brief(connection: sqlite3.Connection) -> str:
     utilization = billable_hours / total_hours if total_hours else 0
     flags: list[str] = []
     for row in projects:
+        label = row["project_code"] or row["project_name"]
         if float(row["unbilled_time_value"]) > 5000:
-            flags.append(f"{row['project_code']} has estimated unbilled time of ${row['unbilled_time_value']:,.2f}.")
-        if float(row["contract_amount"]) and float(row["estimated_billable_value"]) > float(row["contract_amount"]):
-            flags.append(f"{row['project_code']} estimated billable time exceeds its contract amount.")
+            flags.append(
+                f"{label} has estimated unbilled time of "
+                f"${row['unbilled_time_value']:,.2f}."
+            )
+        if float(row["contract_amount"]) and float(
+            row["estimated_billable_value"]
+        ) > float(row["contract_amount"]):
+            flags.append(
+                f"{label} estimated billable time exceeds its contract amount."
+            )
     if employees:
         busiest = max(employees, key=lambda row: float(row["hours"]))
-        flags.append(f"{busiest['employee_name']} logged the most fixture hours ({busiest['hours']:.1f}).")
+        flags.append(
+            f"{busiest['employee_name']} logged the most historical hours "
+            f"({busiest['hours']:.1f})."
+        )
     trend_text = "No monthly trend data."
     if len(trends) >= 2:
         prior, latest = trends[-2], trends[-1]
         delta = float(latest["hours"]) - float(prior["hours"])
-        trend_text = f"Hours changed by {delta:+.1f} from {prior['month']} to {latest['month']}."
-    bullets = "\n".join(f"- {flag}" for flag in flags) or "- No synthetic-data flags."
-    return f"""# Weekly Management Brief — Synthetic Demonstration
+        trend_text = (
+            f"Hours changed by {delta:+.1f} from {prior['month']} "
+            f"to {latest['month']}."
+        )
+    bullets = "\n".join(f"- {flag}" for flag in flags) or "- No review flags."
+    return f"""# BQE CORE Planning Brief
 
-> This output uses synthetic fixtures only. It is not company data and must not be used for decisions.
+> Source: {data_mode}. BQE CORE remains the system of record. Historical patterns
+> support review and planning; they are not future commitments or automatic decisions.
 
 Generated: {date.today().isoformat()}
 
@@ -154,5 +194,7 @@ Generated: {date.today().isoformat()}
 
 ## Required validation
 
-Reconcile invoice, payment, outstanding, and unbilled totals to BQE CORE reports before presentation. Confirm enum meanings, currency treatment, project hierarchy, permissions, void/draft handling, and the definition of billable value with Finance.
+Reconcile invoice, payment, outstanding, and unbilled totals to BQE CORE reports
+before presentation. Confirm enum meanings, currency treatment, project hierarchy,
+permissions, void/draft handling, and the definition of billable value with Finance.
 """
