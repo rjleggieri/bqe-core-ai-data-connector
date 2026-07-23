@@ -12,6 +12,9 @@ tokens/
 data/
 cache/
 exports/
+output/
+outputs/
+tmp/
 logs/
 *.db
 *.sqlite
@@ -28,5 +31,7 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.coverage
+htmlcov/
 .idea/
 .vscode/

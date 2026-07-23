@@ -30,8 +30,7 @@ class Settings:
     redirect_uri: str = "http://127.0.0.1:8765/callback"
     scopes: tuple[str, ...] = ("read:core",)
     authority: str = "https://api-identity.bqecore.com/idp"
-    api_base_url: str | None = None
-    db_path: Path = Path("data/bqe_reporting.sqlite3")
+    db_path: Path = Path("data/bqe_core_connector.sqlite3")
     utc_offset: str = "-04:00"
     log_level: str = "INFO"
 
@@ -43,13 +42,15 @@ class Settings:
     def from_env(cls) -> "Settings":
         _load_dotenv()
         mode = os.getenv("BQE_MODE", "MOCK").strip().upper()
+        if mode not in {"MOCK", "LIVE"}:
+            raise ValueError("BQE_MODE must be MOCK or LIVE")
         scopes = tuple(os.getenv("BQE_SCOPES", "read:core").split())
         if "readwrite:core" in scopes:
-            raise ValueError("readwrite:core is forbidden by this read-only proof of concept")
-        if "read:core" not in scopes:
-            raise ValueError("BQE_SCOPES must include read:core")
-        if "offline_access" in scopes and mode == "LIVE":
+            raise ValueError("readwrite:core is forbidden by this read-only connector")
+        if "offline_access" in scopes:
             raise ValueError("BQE Native Apps do not support offline_access; request read:core only")
+        if scopes != ("read:core",):
+            raise ValueError("BQE_SCOPES must be exactly read:core")
         return cls(
             mode=mode,
             enable_live=os.getenv("BQE_ENABLE_LIVE", "NO").upper() == "YES",
@@ -57,8 +58,7 @@ class Settings:
             redirect_uri=os.getenv("BQE_REDIRECT_URI", cls.redirect_uri),
             scopes=scopes,
             authority=os.getenv("BQE_AUTHORITY", cls.authority).rstrip("/"),
-            api_base_url=(os.getenv("BQE_API_BASE_URL") or "").rstrip("/") or None,
-            db_path=Path(os.getenv("BQE_DB_PATH", "data/bqe_reporting.sqlite3")),
+            db_path=Path(os.getenv("BQE_DB_PATH", "data/bqe_core_connector.sqlite3")),
             utc_offset=os.getenv("BQE_UTC_OFFSET", "-04:00"),
             log_level=os.getenv("BQE_LOG_LEVEL", "INFO"),
         )
@@ -69,5 +69,5 @@ class Settings:
                 "LIVE access is disabled. Set BQE_MODE=LIVE and BQE_ENABLE_LIVE=YES only "
                 "after review and explicit approval."
             )
-        if not self.client_id or not self.api_base_url:
-            raise RuntimeError("BQE_CLIENT_ID and token-provided BQE_API_BASE_URL are required")
+        if not self.client_id:
+            raise RuntimeError("BQE_CLIENT_ID is required")
