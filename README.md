@@ -1,17 +1,25 @@
 # BQE CORE AI Data Connector
 
-**Professional project · Gutschick, Little & Weber, P.A.**
+**Professional project · GLW**
 
 ![BQE CORE API to read-only ingestion to validated warehouse to AI-ready planning context](docs/architecture.svg)
 
-## An AI-ready bridge from business data to decision support
+## Project data for weekly workload planning
 
-This connector turns authorized historical BQE CORE operational and financial data
-into a normalized, auditable local warehouse. It gives downstream AI tools traceable
-project and resource history for human-reviewed workload planning as schedules change.
+I built this read-only connector to bring authorized BQE CORE history into a normalized,
+auditable SQLite warehouse and downstream planning workflows.
 
-BQE CORE remains the system of record. The connector cannot create, update, or delete
-BQE data.
+One use is a weekly workload-planning prototype: BQE history supplies employee and project
+context, while the team adds next actions, priorities, day estimates, and waiting work.
+The workbook's management view compares planned days with capacity and flags overloads,
+missing estimates, high-priority backlog, and near-term dates.
+
+The connector also exports traceable JSON, Markdown, and CSV summaries for reporting and
+AI-assisted analysis. BQE remains the system of record; planning inputs are maintained
+alongside the imported history.
+
+[See the workload-planning illustration](https://rjleggieri.github.io/#bqe), recreated with
+fictional data. The private GLW workbook and company records are not included in this repository.
 
 ## What it does
 
